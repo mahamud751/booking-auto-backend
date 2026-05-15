@@ -7,11 +7,12 @@ import {
   Patch,
   Post,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import type { Express } from 'express';
@@ -70,5 +71,23 @@ export class ProductsController {
     return {
       imageUrl: `/uploads/products/${file.filename}`,
     };
+  }
+
+  @Post('upload-multiple')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      storage: diskStorage({
+        destination: './uploads/products',
+        filename: (_req, file, callback) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          callback(null, `${unique}${extname(file.originalname)}`);
+        },
+      }),
+    }),
+  )
+  uploadProductImages(@UploadedFiles() files: Express.Multer.File[]) {
+    const images = (files ?? []).map((file) => `/uploads/products/${file.filename}`);
+    return { images, imageUrl: images[0] ?? null };
   }
 }

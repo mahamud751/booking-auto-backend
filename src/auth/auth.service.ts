@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { slugify } from '../common/slug.util';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcryptjs';
@@ -19,6 +20,7 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
+    const slug = await this.createUniqueSlug(dto.businessName);
     const created = await this.prisma.user.create({
       data: {
         name: dto.ownerName,
@@ -27,6 +29,7 @@ export class AuthService {
         passwordHash,
         business: {
           create: {
+            slug,
             name: dto.businessName,
             ownerName: dto.ownerName,
             phone: dto.phone,
@@ -52,6 +55,17 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     return this.issueTokens(user.id, user.phone, user.business.id, user.name);
+  }
+
+  private async createUniqueSlug(name: string) {
+    const base = slugify(name);
+    let slug = base;
+    let counter = 1;
+    while (await this.prisma.business.findUnique({ where: { slug } })) {
+      slug = `${base}-${counter}`;
+      counter += 1;
+    }
+    return slug;
   }
 
   private issueTokens(userId: string, phone: string, businessId: string, name: string) {

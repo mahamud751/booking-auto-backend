@@ -49,6 +49,23 @@ export class CreateOrderDto {
   @IsString()
   size?: string;
 
+  @ApiProperty({ required: false, default: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  quantity?: number;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  paymentMethod?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  paymentNumber?: string;
+
   @ApiProperty()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })

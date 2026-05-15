@@ -1,13 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto } from './dto/create-product.dto';
+import {
+  CreateProductDto,
+  DEFAULT_PRODUCT_COLORS,
+  DEFAULT_PRODUCT_SIZES,
+  UpdateProductDto,
+} from './dto/create-product.dto';
 
 @Injectable()
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
   create(businessId: string, dto: CreateProductDto) {
-    return this.prisma.product.create({ data: { ...dto, businessId } });
+    const colors = normalizeOptions(dto.colors, DEFAULT_PRODUCT_COLORS);
+    const sizes = normalizeOptions(dto.sizes, DEFAULT_PRODUCT_SIZES);
+    const images = normalizeImages(dto.images, dto.imageUrl);
+    const imageUrl = images[0] ?? dto.imageUrl ?? null;
+    return this.prisma.product.create({
+      data: {
+        name: dto.name,
+        sku: dto.sku,
+        price: dto.price,
+        stock: dto.stock ?? 0,
+        colors,
+        sizes,
+        images,
+        imageUrl,
+        businessId,
+      },
+    });
   }
 
   findAll(businessId: string) {
@@ -22,7 +43,14 @@ export class ProductsService {
   }
 
   async update(id: string, businessId: string, dto: UpdateProductDto) {
-    await this.prisma.product.updateMany({ where: { id, businessId }, data: dto });
+    const data: UpdateProductDto = { ...dto };
+    if (dto.colors !== undefined) {
+      data.colors = normalizeOptions(dto.colors, DEFAULT_PRODUCT_COLORS);
+    }
+    if (dto.sizes !== undefined) {
+      data.sizes = normalizeOptions(dto.sizes, DEFAULT_PRODUCT_SIZES);
+    }
+    await this.prisma.product.updateMany({ where: { id, businessId }, data });
     return this.findOne(id, businessId);
   }
 
@@ -30,4 +58,18 @@ export class ProductsService {
     await this.prisma.product.deleteMany({ where: { id, businessId } });
     return { deleted: true };
   }
+}
+
+function normalizeOptions(values: string[] | undefined, fallback: string[]) {
+  const cleaned = (values ?? [])
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return cleaned.length > 0 ? cleaned : fallback;
+}
+
+function normalizeImages(images: string[] | undefined, imageUrl?: string) {
+  const cleaned = (images ?? []).map((value) => value.trim()).filter(Boolean);
+  if (cleaned.length > 0) return cleaned;
+  if (imageUrl?.trim()) return [imageUrl.trim()];
+  return [];
 }

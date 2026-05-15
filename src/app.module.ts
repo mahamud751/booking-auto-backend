@@ -8,6 +8,7 @@ import { ProductsModule } from './products/products.module';
 import { OrdersModule } from './orders/orders.module';
 import { QuickRepliesModule } from './quick-replies/quick-replies.module';
 import { AuthModule } from './auth/auth.module';
+import { StoreModule } from './store/store.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthModule } from './auth/auth.module';
     ProductsModule,
     OrdersModule,
     QuickRepliesModule,
+    StoreModule,
   ],
   controllers: [AppController],
   providers: [AppService],

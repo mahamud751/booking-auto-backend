@@ -34,6 +34,7 @@ async function bootstrap() {
     .addTag('products')
     .addTag('orders')
     .addTag('quick-replies')
+    .addTag('store')
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs', app, document);

@@ -15,6 +15,7 @@ enum OrderStatus {
 
 model Business {
   id           String       @id @default(cuid())
+  slug         String       @unique
   name         String
   ownerName    String
   phone        String
@@ -46,8 +47,11 @@ model Product {
   name        String
   sku         String?
   imageUrl     String?
+  images      String[] @default([])
   price       Decimal  @db.Decimal(10, 2)
   stock       Int      @default(0)
+  colors      String[] @default(["Black", "White", "Red", "Blue"])
+  sizes       String[] @default(["S", "M", "L", "XL", "XXL"])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   orders      Order[]
@@ -66,6 +70,9 @@ model Order {
   productName   String
   color         String?
   size          String?
+  quantity      Int         @default(1)
+  paymentMethod String?
+  paymentNumber String?
   price         Decimal     @db.Decimal(10, 2)
   status        OrderStatus @default(PENDING)
   source        String      @default("MESSENGER")

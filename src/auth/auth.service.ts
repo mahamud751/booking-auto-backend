@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { normalizePhone } from '../common/phone.util';
 import { slugify } from '../common/slug.util';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -14,6 +15,7 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    dto.phone = normalizePhone(dto.phone);
     const exists = await this.prisma.user.findUnique({ where: { phone: dto.phone } });
     if (exists) {
       throw new BadRequestException('Phone already registered');
@@ -43,18 +45,50 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({
-      where: { phone: dto.phone },
-      include: { business: true },
-    });
+    const phone = normalizePhone(dto.phone);
+    const user = await this.findUserByPhone(phone);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid phone or password');
     }
     const isValid = await bcrypt.compare(dto.password, user.passwordHash);
-    if (!isValid || !user.business) {
-      throw new UnauthorizedException('Invalid credentials');
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid phone or password');
+    }
+    if (!user.business) {
+      throw new UnauthorizedException(
+        'Shop account is not set up. Please register again or contact support.',
+      );
     }
     return this.issueTokens(user.id, user.phone, user.business.id, user.name);
+  }
+
+  private async findUserByPhone(phone: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { phone },
+      include: { business: true },
+    });
+    if (user) return user;
+
+    // Support accounts saved before phone normalization (+880 / 880 formats).
+    const candidates = new Set<string>();
+    if (phone.startsWith('0')) {
+      candidates.add(`+880${phone.slice(1)}`);
+      candidates.add(`880${phone.slice(1)}`);
+    }
+    for (const candidate of candidates) {
+      const match = await this.prisma.user.findUnique({
+        where: { phone: candidate },
+        include: { business: true },
+      });
+      if (match) {
+        await this.prisma.user.update({
+          where: { id: match.id },
+          data: { phone },
+        });
+        return { ...match, phone };
+      }
+    }
+    return null;
   }
 
   private async createUniqueSlug(name: string) {

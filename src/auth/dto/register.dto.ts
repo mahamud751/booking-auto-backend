@@ -1,5 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { normalizePhone } from '../../common/phone.util';
 
 export class RegisterDto {
   @ApiProperty()
@@ -13,6 +15,7 @@ export class RegisterDto {
   ownerName: string;
 
   @ApiProperty()
+  @Transform(({ value }) => normalizePhone(String(value ?? '')))
   @IsString()
   @IsNotEmpty()
   phone: string;

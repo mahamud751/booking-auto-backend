@@ -23,14 +23,15 @@ export class StoreService {
     const safeLimit = Math.min(Math.max(1, limit), 50);
     const skip = (safePage - 1) * safeLimit;
 
+    const where = { businessId: business.id, isActive: true };
     const [items, total] = await this.prisma.$transaction([
       this.prisma.product.findMany({
-        where: { businessId: business.id },
+        where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: safeLimit,
       }),
-      this.prisma.product.count({ where: { businessId: business.id } }),
+      this.prisma.product.count({ where }),
     ]);
 
     return {
@@ -45,7 +46,7 @@ export class StoreService {
   async getProduct(slug: string, productId: string) {
     const business = await this.findBusiness(slug);
     const product = await this.prisma.product.findFirst({
-      where: { id: productId, businessId: business.id },
+      where: { id: productId, businessId: business.id, isActive: true },
     });
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -56,10 +57,10 @@ export class StoreService {
   async checkout(slug: string, dto: StoreCheckoutDto) {
     const business = await this.findBusiness(slug);
     const product = await this.prisma.product.findFirst({
-      where: { id: dto.productId, businessId: business.id },
+      where: { id: dto.productId, businessId: business.id, isActive: true },
     });
     if (!product) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException('Product not found or inactive');
     }
 
     const unitPrice = Number(product.price);

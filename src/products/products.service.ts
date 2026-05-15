@@ -26,6 +26,7 @@ export class ProductsService {
         sizes,
         images,
         imageUrl,
+        isActive: dto.isActive ?? true,
         businessId,
       },
     });
@@ -43,12 +44,17 @@ export class ProductsService {
   }
 
   async update(id: string, businessId: string, dto: UpdateProductDto) {
-    const data: UpdateProductDto = { ...dto };
+    const data: Record<string, unknown> = { ...dto };
     if (dto.colors !== undefined) {
       data.colors = normalizeOptions(dto.colors, DEFAULT_PRODUCT_COLORS);
     }
     if (dto.sizes !== undefined) {
       data.sizes = normalizeOptions(dto.sizes, DEFAULT_PRODUCT_SIZES);
+    }
+    if (dto.images !== undefined || dto.imageUrl !== undefined) {
+      const images = normalizeImages(dto.images, dto.imageUrl);
+      data.images = images;
+      data.imageUrl = images[0] ?? null;
     }
     await this.prisma.product.updateMany({ where: { id, businessId }, data });
     return this.findOne(id, businessId);

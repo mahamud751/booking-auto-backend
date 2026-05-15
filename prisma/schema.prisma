@@ -52,6 +52,7 @@ model Product {
   stock       Int      @default(0)
   colors      String[] @default(["Black", "White", "Red", "Blue"])
   sizes       String[] @default(["S", "M", "L", "XL", "XXL"])
+  isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   orders      Order[]

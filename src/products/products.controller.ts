@@ -13,8 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { productImageLimits, productImageStorage } from './multer.config';
 import type { Express } from 'express';
 import { CreateProductDto, UpdateProductDto } from './dto/create-product.dto';
 import { ProductsService } from './products.service';
@@ -58,13 +57,8 @@ export class ProductsController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: './uploads/products',
-        filename: (_req, file, callback) => {
-          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          callback(null, `${unique}${extname(file.originalname)}`);
-        },
-      }),
+      storage: productImageStorage,
+      limits: productImageLimits,
     }),
   )
   uploadProductImage(@UploadedFile() file: Express.Multer.File) {
@@ -77,13 +71,8 @@ export class ProductsController {
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(
     FilesInterceptor('files', 10, {
-      storage: diskStorage({
-        destination: './uploads/products',
-        filename: (_req, file, callback) => {
-          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          callback(null, `${unique}${extname(file.originalname)}`);
-        },
-      }),
+      storage: productImageStorage,
+      limits: productImageLimits,
     }),
   )
   uploadProductImages(@UploadedFiles() files: Express.Multer.File[]) {

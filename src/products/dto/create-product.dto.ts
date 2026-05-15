@@ -1,6 +1,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsArray, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 
 export const DEFAULT_PRODUCT_COLORS = ['Black', 'White', 'Red', 'Blue'];
 export const DEFAULT_PRODUCT_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
@@ -51,6 +51,11 @@ export class CreateProductDto {
   @IsArray()
   @IsString({ each: true })
   sizes?: string[];
+
+  @ApiProperty({ required: false, default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) {}
